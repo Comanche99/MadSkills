@@ -509,9 +509,6 @@ function VariantC(){
       ${renderMonthDayHabitList(mk)}
       <h2 style="margin-top:16px">Task list</h2>
       ${monthUnanchored(mk).map(b=>bulletRow(b)).join('') || '<div class="empty">No month-list items.</div>'}`;
-  } else if(ui.tab==='habits'){
-    header = `<h1 class="pagetitle">Habits</h1><div class="sub">${humanMonth(ui.activeMonth)}</div>`;
-    content = habitGridHTML(ui.activeMonth, true);
   } else if(ui.tab==='review'){
     header = `<h1 class="pagetitle">Review inbox</h1><div class="sub">Unfinished from ${humanMonth(prevMonthKey(TODAY_MONTH))}</div>`;
     content = migCandidates.map(b=>{
@@ -531,7 +528,6 @@ function VariantC(){
     <nav class="topnav-c">
       <button class="${ui.tab==='today'?'active':''}" onclick="ui.tab='today';render()"><span class="ic">☀</span>Today</button>
       <button class="${ui.tab==='month'?'active':''}" onclick="ui.tab='month';render()"><span class="ic">▤</span>Month</button>
-      <button class="${ui.tab==='habits'?'active':''}" onclick="ui.tab='habits';render()"><span class="ic">◎</span>Habits</button>
       <button class="${ui.tab==='review'?'active':''}" onclick="ui.tab='review';render()" style="position:relative">
         <span class="ic">✎</span>Review
         ${migCandidates.length ? `<span class="badge">${migCandidates.length}</span>` : ''}
