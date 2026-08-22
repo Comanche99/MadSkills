@@ -1,0 +1,5 @@
+# Day-anchored month-scoped bullets mirror into the Daily Log automatically
+
+The paper Bullet Journal method's Calendar Page (a monthly, day-by-day list of dated events/tasks) requires manually writing an entry twice if you also want it in that day's Daily Log — the two pages are physically separate. We deliberately deviate from this: a month-scoped bullet with a day-anchor is automatically shown in that date's Daily Log too, with no duplicate entry required. The mirroring is one-way — a bullet created directly in a Daily Log is day-scoped and never appears on the Monthly Log — so there is exactly one place a Calendar-originated item is authored, even though it's visible in two places.
+
+We picked this because the manual double-entry in the paper method is a side effect of paper being the medium, not a deliberate feature of the method — removing it loses nothing users actually value about BuJo while removing real friction. It's called out here because a future reader familiar with the paper method might assume duplicate entry is required, or "fix" the mirroring into a two-way sync (which would break the deliberate one-way authorship rule).
