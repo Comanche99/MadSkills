@@ -77,8 +77,27 @@
        color:var(--ink-dim);cursor:pointer;position:relative}
   .bottomnav button.active{color:var(--accent);font-weight:700}
   .bottomnav .ic{display:block;font-size:18px;margin-bottom:2px}
-  .badge{position:absolute;top:2px;right:calc(50% - 20px);background:var(--danger);color:#fff;
+  .topnav-c{display:flex;border-bottom:1px solid var(--line);background:var(--panel)}
+  .topnav-c button{flex:1;padding:7px 4px 6px;background:none;border:none;font-size:11px;
+       color:var(--ink-dim);cursor:pointer;position:relative}
+  .topnav-c button.active{color:var(--accent);font-weight:700}
+  .topnav-c .ic{display:block;font-size:16px;margin-bottom:1px}
+  .badge{position:absolute;top:0;right:calc(50% - 20px);background:var(--danger);color:#fff;
        font-size:10px;border-radius:10px;padding:0 5px;line-height:15px}
+  .daylist-table{border-collapse:collapse;width:100%;font-size:12px}
+  .daylist-table th,.daylist-table td{border-bottom:1px solid var(--line);padding:4px 3px;vertical-align:middle}
+  .daylist-table th{background:#faf8f2;font-size:10px;color:var(--ink-dim);font-weight:600}
+  .daylist-table td.daylabel,.daylist-table th.daylabel{width:30px;text-align:center}
+  .daylist-table td.daylabel .ltr{display:block;font-size:10px;color:var(--ink-dim)}
+  .daylist-table td.daylabel .num{font-size:13px;font-weight:700}
+  .daylist-table td.entries{font-size:11.5px}
+  .daylist-table td.entries .mk{display:block;color:var(--accent);white-space:nowrap;
+       overflow:hidden;text-overflow:ellipsis;max-width:120px}
+  .daylist-table th.habitcol,.daylist-table td.habitcol{width:24px;text-align:center;padding:2px}
+  .daylist-table th.habitcol .vert{writing-mode:vertical-rl;transform:rotate(180deg);
+       font-size:9px;white-space:nowrap;color:var(--accent);font-weight:700;display:inline-block;
+       max-height:70px}
+  .daylist-table td.habitcol input[type=checkbox]{width:14px;height:14px}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:11px}
   .cal-cell{border:1px solid var(--line);border-radius:6px;min-height:52px;padding:3px;background:#faf8f2}
   .cal-cell .dn{font-size:10px;color:var(--ink-dim)}
@@ -444,42 +463,58 @@ function wizardAct(id, action){
 }
 
 /* ================= VARIANT C — Bottom-nav app shell + inbox-style migration ================= */
+function renderMonthDayHabitList(mk){
+  const nDays = daysInMonth(mk);
+  const [y,m] = mk.split('-').map(Number);
+  const sel = data.monthlyHabitSelection[mk] || [];
+  const habits = data.habits.filter(h=>!h.archived && sel.includes(h.id));
+  const head = `<tr><th class="daylabel"></th><th>Entries</th>${
+    habits.map(h=>`<th class="habitcol"><span class="vert">${h.name}</span></th>`).join('')
+  }</tr>`;
+  const rows = Array.from({length:nDays},(_,i)=>{
+    const d = `${y}-${pad(m)}-${pad(i+1)}`;
+    const letter = dayName(d).charAt(0).toUpperCase();
+    const entries = monthAnchored(mk).filter(b=>b.dayAnchor===d);
+    const entriesHTML = entries.map(b=>`<span class="mk">${glyph(b)}${b.text}</span>`).join('');
+    const habitCells = habits.map(h=>{
+      const checked = !!data.habitChecks[`${h.id}_${d}`];
+      return `<td class="habitcol"><input type="checkbox" ${checked?'checked':''} onchange="toggleHabitCheck('${h.id}','${d}')"></td>`;
+    }).join('');
+    const today = d===TODAY_ISO ? ' style="background:#f3e6da"' : '';
+    return `<tr${today}><td class="daylabel"><span class="ltr">${letter}</span><span class="num">${i+1}</span></td><td class="entries">${entriesHTML}</td>${habitCells}</tr>`;
+  }).join('');
+  return `<div style="overflow-x:auto"><table class="daylist-table">${head}${rows}</table></div>
+    ${habitPickerHTML(mk)}`;
+}
 function VariantC(){
   const migCandidates = openTasksForMonthBoundary(prevMonthKey(TODAY_MONTH)).filter(b=>b.status==='open');
-  let body='';
+  let header='', content='';
   if(ui.tab==='today'){
-    body = `
-      <header class="top">
-        <div class="row-gap" style="justify-content:space-between;align-items:center">
-          <div><h1 class="pagetitle">${humanDate(ui.selectedDate)}</h1><div class="sub">Today</div></div>
-          <button class="btn small" onclick="ui.sheetOpen='entry';render()">+ Add</button>
-        </div>
-      </header>
-      <div class="section">
-        ${bulletsForDay(ui.selectedDate).map(b=>bulletRow(b,{dayCtx:true})).join('') || '<div class="empty">Nothing logged yet.</div>'}
+    header = `
+      <div class="row-gap" style="justify-content:space-between;align-items:center">
+        <div><h1 class="pagetitle">${humanDate(ui.selectedDate)}</h1><div class="sub">Today</div></div>
+        <button class="btn small" onclick="ui.sheetOpen='entry';render()">+ Add</button>
       </div>`;
+    content = `${bulletsForDay(ui.selectedDate).map(b=>bulletRow(b,{dayCtx:true})).join('') || '<div class="empty">Nothing logged yet.</div>'}`;
   } else if(ui.tab==='month'){
     const mk = ui.activeMonth;
-    body = `
-      <header class="top">
-        <div class="row-gap" style="justify-content:space-between;align-items:center">
-          <button class="btn small ghost" onclick="ui.activeMonth=prevMonthKey(ui.activeMonth);render()">←</button>
-          <b>${humanMonth(mk)}</b>
-          <button class="btn small ghost" onclick="ui.activeMonth=nextMonthKey(ui.activeMonth);render()">→</button>
-        </div>
-      </header>
-      <div class="section"><h2>Calendar</h2>${calendarGridHTML(mk)}</div>
-      <div class="section"><h2>Task list</h2>
-        ${monthUnanchored(mk).map(b=>bulletRow(b)).join('') || '<div class="empty">No month-list items.</div>'}
+    header = `
+      <div class="row-gap" style="justify-content:space-between;align-items:center">
+        <button class="btn small ghost" onclick="ui.activeMonth=prevMonthKey(ui.activeMonth);render()">←</button>
+        <b>${humanMonth(mk)}</b>
+        <button class="btn small ghost" onclick="ui.activeMonth=nextMonthKey(ui.activeMonth);render()">→</button>
       </div>`;
+    content = `
+      <h2>Calendar &amp; habits</h2>
+      ${renderMonthDayHabitList(mk)}
+      <h2 style="margin-top:16px">Task list</h2>
+      ${monthUnanchored(mk).map(b=>bulletRow(b)).join('') || '<div class="empty">No month-list items.</div>'}`;
   } else if(ui.tab==='habits'){
-    body = `
-      <header class="top"><h1 class="pagetitle">Habits</h1><div class="sub">${humanMonth(ui.activeMonth)}</div></header>
-      <div class="section">${habitGridHTML(ui.activeMonth, true)}</div>`;
+    header = `<h1 class="pagetitle">Habits</h1><div class="sub">${humanMonth(ui.activeMonth)}</div>`;
+    content = habitGridHTML(ui.activeMonth, true);
   } else if(ui.tab==='review'){
-    body = `
-      <header class="top"><h1 class="pagetitle">Review inbox</h1><div class="sub">Unfinished from ${humanMonth(prevMonthKey(TODAY_MONTH))}</div></header>
-      ${migCandidates.map(b=>{
+    header = `<h1 class="pagetitle">Review inbox</h1><div class="sub">Unfinished from ${humanMonth(prevMonthKey(TODAY_MONTH))}</div>`;
+    content = migCandidates.map(b=>{
         const from = b.scope==='day' ? b.date : b.month;
         return `<div class="inbox-row">
           <div>${glyph(b)}<span class="txt">${b.text}</span><span class="from">from ${from}</span></div>
@@ -489,12 +524,11 @@ function VariantC(){
             <button class="btn small danger" onclick="cancelTask('${b.id}')">✕</button>
           </div>
         </div>`;
-      }).join('') || '<div class="section"><div class="empty">Inbox zero — nothing to review.</div></div>'}`;
+      }).join('') || '<div class="empty">Inbox zero — nothing to review.</div>';
   }
   return `
-    ${body}
-    ${ui.sheetOpen==='entry' ? entrySheetHTML() : ''}
-    <div class="bottomnav">
+    <header class="top">${header}</header>
+    <nav class="topnav-c">
       <button class="${ui.tab==='today'?'active':''}" onclick="ui.tab='today';render()"><span class="ic">☀</span>Today</button>
       <button class="${ui.tab==='month'?'active':''}" onclick="ui.tab='month';render()"><span class="ic">▤</span>Month</button>
       <button class="${ui.tab==='habits'?'active':''}" onclick="ui.tab='habits';render()"><span class="ic">◎</span>Habits</button>
@@ -502,7 +536,9 @@ function VariantC(){
         <span class="ic">✎</span>Review
         ${migCandidates.length ? `<span class="badge">${migCandidates.length}</span>` : ''}
       </button>
-    </div>
+    </nav>
+    <div class="section">${content}</div>
+    ${ui.sheetOpen==='entry' ? entrySheetHTML() : ''}
   `;
 }
 
