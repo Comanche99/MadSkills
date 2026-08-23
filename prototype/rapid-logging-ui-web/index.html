@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE — BuJo web-viewport UI (throwaway, do not ship)</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --panel:#fffdf8; --ink:#232019; --ink-dim:#6b665c;
+    --line:#e4ddce; --accent:#8a5a3a; --accent-ink:#fff;
+    --task-done:#8a5a3a; --task-cancel:#b3ac9c;
+    --event:#3a6b8a; --note:#6b665c; --danger:#a3402f; --ok:#3a7a4a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:70px}
+  .note-banner{font-size:12px;color:#7a1f1f;background:#fce7e0;border-bottom:1px solid #eab3a0;
+       padding:8px 20px}
+  h1,h2,h3{margin:0}
+  .btn{border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;
+       cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+  .btn.small{padding:5px 10px;font-size:12px;border-radius:6px}
+  .btn.danger{background:var(--danger)} .btn.ok{background:var(--ok)}
+  .row-gap{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .bullet-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid #f0ece2}
+  .bullet-row:last-child{border-bottom:none}
+  .glyph{width:16px;flex:none;text-align:center;font-size:14px;color:var(--ink)}
+  .glyph.event{color:var(--event)} .glyph.note{color:var(--note)}
+  .glyph.done{color:var(--task-done)} .glyph.cancel{color:var(--task-cancel)}
+  .btxt{flex:1;font-size:14px} .btxt.done{color:var(--ink-dim);text-decoration:line-through}
+  .btxt.cancel{color:var(--task-cancel);text-decoration:line-through}
+  .tag{font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:1px 6px;margin-left:6px}
+  .empty{font-size:13px;color:var(--ink-dim);font-style:italic}
+  input[type=text],input[type=date]{padding:8px 10px;border-radius:7px;border:1px solid var(--line);font-size:13px}
+  .type-pick button{padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:#faf8f2;
+       font-size:12px;cursor:pointer;margin-right:4px}
+  .type-pick button.active{border-color:var(--accent);background:#f3e6da;font-weight:700}
+
+  /* switcher */
+  #switcher{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;
+       display:flex;align-items:center;gap:10px;background:#1c1a16;color:#fff;padding:8px 8px 8px 14px;
+       border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:13px}
+  #switcher button{background:#332f27;color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px}
+  #switcher .lbl{min-width:170px;text-align:center}
+  #switcher .lbl b{display:block;font-size:9px;letter-spacing:.08em;color:#c9a97e;text-transform:uppercase}
+
+  /* ---- Variant A: sidebar app shell ---- */
+  .A-shell{display:flex;min-height:calc(100vh - 34px)}
+  .A-sidebar{width:220px;flex:none;background:#2a251d;color:#e8e0d0;padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+  .A-sidebar .brand{font-size:17px;font-weight:700;margin-bottom:18px;color:#fff}
+  .A-sidebar button{display:flex;align-items:center;gap:10px;background:none;border:none;color:#c9c2b3;
+       padding:9px 10px;border-radius:8px;font-size:14px;cursor:pointer;text-align:left;position:relative}
+  .A-sidebar button.active{background:#3b3427;color:#fff}
+  .A-sidebar button .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;border-radius:10px;padding:1px 6px}
+  .A-main{flex:1;padding:32px 40px;max-width:760px}
+  .A-main .pagehead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .A-quickadd{display:flex;gap:8px;margin:14px 0 18px}
+  .A-quickadd input{flex:1}
+  .A-monthgrid{display:grid;grid-template-columns:120px 1fr auto;gap:0;font-size:13px}
+  .A-monthgrid .hrow,.A-monthgrid .drow{display:contents}
+  .A-monthgrid > div{border-bottom:1px solid var(--line);padding:5px 8px}
+  .A-monthgrid .habits{display:flex;gap:10px}
+  .A-monthgrid .habits label{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--ink-dim);gap:3px}
+  .A-review-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .A-review-row .txt{flex:1}
+  .A-review-row .from{font-size:11px;color:var(--ink-dim);display:block}
+
+  /* ---- Variant B: multi-pane dashboard ---- */
+  .B-shell{display:grid;grid-template-columns:280px 1fr 320px;gap:0;min-height:calc(100vh - 34px)}
+  .B-col{padding:20px;overflow:auto}
+  .B-col + .B-col{border-left:1px solid var(--line)}
+  .B-col h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-dim);margin-bottom:10px}
+  .B-mini-day{display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:12.5px}
+  .B-mini-day:hover{background:#f0ece2}
+  .B-mini-day.today{background:#f3e6da;font-weight:700}
+  .B-mini-day .dots{display:flex;gap:2px}
+  .B-mini-day .dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+  .B-need-review{background:#fdf1e8;border:1px solid #e6c39a;border-radius:10px;padding:12px;margin-top:16px}
+  .B-need-review .r{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eddac0}
+  .B-need-review .r:last-child{border-bottom:none}
+  .B-habit-table{width:100%;border-collapse:collapse;font-size:11px}
+  .B-habit-table th,.B-habit-table td{border:1px solid var(--line);padding:3px 2px;text-align:center}
+  .B-habit-table th{background:#faf8f2;font-size:9px}
+  .B-habit-table td.name{text-align:left;padding-left:5px;font-weight:600}
+
+  /* ---- Variant C: document / single scroll ---- */
+  .C-toolbar{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line);
+       padding:12px 40px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+  .C-toolbar .links a{margin-left:16px;font-size:13px;color:var(--ink-dim);text-decoration:none;cursor:pointer}
+  .C-toolbar .links a:hover{color:var(--accent)}
+  .C-doc{max-width:760px;margin:0 auto;padding:30px 20px}
+  .C-alert{background:#fdf1e8;border:1px solid #e6c39a;border-radius:10px;padding:14px 16px;margin-bottom:26px;cursor:pointer}
+  .C-alert.open{cursor:default}
+  .C-section{padding:34px 0;border-top:1px solid var(--line)}
+  .C-section:first-of-type{border-top:none}
+  .C-daylist{border-collapse:collapse;width:100%;font-size:13px}
+  .C-daylist th,.C-daylist td{border-bottom:1px solid #f0ece2;padding:5px 6px;text-align:left}
+  .C-daylist th{font-size:10px;color:var(--ink-dim);text-transform:uppercase}
+  .C-daylist td.d{width:60px;color:var(--ink-dim);font-size:12px}
+  .C-daylist tr.week-end td{border-bottom:2px solid var(--accent)}
+  .C-daylist td.habitcol,.C-daylist th.habitcol{width:26px;text-align:center}
+</style>
+</head>
+<body>
+<div class="note-banner">PROTOTYPE — throwaway, not production code. Answers "what should the rapid-logging UI look like at a standard web-app viewport (no mobile constraint)" for wayfinder ticket #11. In-memory data only, resets on reload.</div>
+<div id="app"></div>
+<div id="switcher"></div>
+
+<script>
+/* ---------- fixed "today" ---------- */
+const TODAY = new Date(2026,7,22);
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+const TODAY_ISO = iso(TODAY);
+const TODAY_MONTH = monthKey(TODAY);
+const dayName = iso => new Date(iso+'T00:00:00').toLocaleDateString(undefined,{weekday:'short'});
+const dayNum = iso => new Date(iso+'T00:00:00').getDate();
+const humanDate = iso => new Date(iso+'T00:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+const humanMonth = mk => { const [y,m]=mk.split('-'); return new Date(y,m-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'}); };
+const prevMonthKey = mk => { const [y,m]=mk.split('-').map(Number); return monthKey(new Date(y,m-2,1)); };
+const nextMonthKey = mk => { const [y,m]=mk.split('-').map(Number); return monthKey(new Date(y,m,1)); };
+const daysInMonth = mk => { const [y,m]=mk.split('-').map(Number); return new Date(y,m,0).getDate(); };
+
+/* ---------- seed data (same shape as the mobile prototype) ---------- */
+let uid = 100;
+const data = {
+  habits: [
+    {id:'h1', name:'Exercise', archived:false},
+    {id:'h2', name:'Read 20 min', archived:false},
+    {id:'h3', name:'No phone after 10pm', archived:false},
+  ],
+  monthlyHabitSelection: { '2026-07':['h1','h2'], '2026-08':['h1','h2','h3'] },
+  habitChecks: {},
+  bullets: [
+    {id:'b1',type:'task',text:'Finish wayfinder prototype ticket',scope:'day',date:'2026-08-22',status:'open',history:[]},
+    {id:'b2',type:'event',text:'Team standup 10am',scope:'day',date:'2026-08-22'},
+    {id:'b3',type:'note',text:'Idea: weekly review ritual on Sundays',scope:'day',date:'2026-08-22'},
+    {id:'b4',type:'task',text:'Buy groceries',scope:'day',date:'2026-08-20',status:'complete',history:[]},
+    {id:'b5',type:'task',text:'Call dentist',scope:'day',date:'2026-08-20',status:'open',history:[]},
+    {id:'b6',type:'task',text:'Renew passport',scope:'day',date:'2026-07-10',status:'open',history:[]},
+    {id:'b7',type:'task',text:'Fix leaky faucet',scope:'day',date:'2026-07-18',status:'open',history:[]},
+    {id:'b8',type:'task',text:'Write blog post draft',scope:'day',date:'2026-07-25',status:'open',
+      history:[{from:'2026-06',to:'2026-07',timestamp:'2026-07-01T09:00:00Z'}]},
+    {id:'b9',type:'event',text:"Mom's birthday",scope:'month',month:'2026-08',dayAnchor:'2026-08-28'},
+    {id:'b10',type:'task',text:'Quarterly taxes due',scope:'month',month:'2026-08',dayAnchor:'2026-08-31',status:'open',history:[]},
+    {id:'b11',type:'task',text:'Plan autumn trip',scope:'month',month:'2026-08',dayAnchor:null,status:'open',history:[]},
+    {id:'b12',type:'task',text:'Research new laptop',scope:'month',month:'2026-08',dayAnchor:null,status:'open',history:[]},
+    {id:'b13',type:'task',text:'Organize garage',scope:'month',month:'2026-07',dayAnchor:null,status:'open',history:[]},
+  ],
+};
+['2026-08-18','2026-08-19','2026-08-20','2026-08-21'].forEach(d=>data.habitChecks[`h1_${d}`]=true);
+['2026-08-19','2026-08-21'].forEach(d=>data.habitChecks[`h2_${d}`]=true);
+['2026-08-20'].forEach(d=>data.habitChecks[`h3_${d}`]=true);
+
+/* ---------- shared helpers ---------- */
+function bulletsForDay(dateIso){
+  return data.bullets.filter(b => (b.scope==='day' && b.date===dateIso) || (b.scope==='month' && b.dayAnchor===dateIso))
+    .sort((a,b)=> (a.scope==='month'?0:1) - (b.scope==='month'?0:1));
+}
+function monthAnchored(mk){ return data.bullets.filter(b=>b.scope==='month' && b.month===mk && b.dayAnchor); }
+function monthUnanchored(mk){ return data.bullets.filter(b=>b.scope==='month' && b.month===mk && !b.dayAnchor); }
+function openTasksForMonthBoundary(mk){
+  return data.bullets.filter(b => b.type==='task' && b.status==='open' &&
+    ((b.scope==='day' && b.date.startsWith(mk)) || (b.scope==='month' && b.month===mk)));
+}
+function glyph(b){
+  if(b.type==='event') return '<span class="glyph event">○</span>';
+  if(b.type==='note') return '<span class="glyph note">–</span>';
+  if(b.status==='complete') return '<span class="glyph done">✕</span>';
+  if(b.status==='cancelled') return '<span class="glyph cancel">⦸</span>';
+  return '<span class="glyph">•</span>';
+}
+function bulletRow(b){
+  const txtClass = b.status==='complete' ? 'done' : b.status==='cancelled' ? 'cancel' : '';
+  const tag = b.scope==='month' ? `<span class="tag">${b.dayAnchor ? 'this month' : 'month list'}</span>` : '';
+  const toggler = (b.type==='task' && b.status==='open') ? `onclick="completeTaskById('${b.id}')" style="cursor:pointer"` : '';
+  return `<div class="bullet-row" ${toggler}>${glyph(b)}<span class="btxt ${txtClass}">${b.text}${tag}</span></div>`;
+}
+function migrateTask(id, toMonth){
+  const b = data.bullets.find(x=>x.id===id);
+  const from = b.scope==='day' ? monthKey(new Date(b.date+'T00:00:00')) : b.month;
+  b.history.push({from, to:toMonth, timestamp:new Date().toISOString()});
+  b.scope='month'; b.month=toMonth; b.dayAnchor=null;
+  render();
+}
+function cancelTask(id){ const b=data.bullets.find(x=>x.id===id); b.status='cancelled'; render(); }
+function completeTaskById(id){ const b=data.bullets.find(x=>x.id===id); if(b.status==='open'){ b.status='complete'; render(); } }
+function toggleHabit(mk, habitId){
+  const sel = data.monthlyHabitSelection[mk] || (data.monthlyHabitSelection[mk]=[]);
+  const i = sel.indexOf(habitId);
+  if(i>=0) sel.splice(i,1); else sel.push(habitId);
+  render();
+}
+function toggleHabitCheck(habitId, dateIso){
+  const k = `${habitId}_${dateIso}`;
+  data.habitChecks[k] = !data.habitChecks[k];
+  render();
+}
+function addBullet({type,text,scope,date,month,dayAnchor}){
+  if(!text || !text.trim()) return;
+  uid++;
+  data.bullets.push({
+    id:'b'+uid, type, text:text.trim(), scope,
+    date: scope==='day' ? date : undefined,
+    month: scope==='month' ? month : undefined,
+    dayAnchor: scope==='month' ? (dayAnchor||null) : undefined,
+    status: type==='task' ? 'open' : undefined,
+    history: type==='task' ? [] : undefined,
+  });
+  render();
+}
+function habitPickerHTML(mk){
+  const sel = data.monthlyHabitSelection[mk] || [];
+  const chips = data.habits.filter(h=>!h.archived).map(h=>{
+    const on = sel.includes(h.id);
+    return `<button class="btn small ${on?'':'ghost'}" onclick="toggleHabit('${mk}','${h.id}')">${on?'✓ ':''}${h.name}</button>`;
+  }).join(' ');
+  return `<div class="row-gap" style="margin-top:8px">${chips}</div>`;
+}
+
+/* ---------- ui state ---------- */
+const ui = { selectedDate: TODAY_ISO, activeMonth: TODAY_MONTH, tab:'today', reviewOpen:false, entryText:'', entryType:'task' };
+
+/* ================= VARIANT A — Persistent sidebar app shell ================= */
+function VariantA(){
+  const migCandidates = openTasksForMonthBoundary(prevMonthKey(TODAY_MONTH)).filter(b=>b.status==='open');
+  let content = '';
+  if(ui.tab==='today'){
+    content = `
+      <div class="pagehead"><h1>${humanDate(ui.selectedDate)}</h1></div>
+      <div class="A-quickadd">
+        <div class="type-pick">
+          ${['task','event','note'].map(t=>`<button class="${ui.entryType===t?'active':''}" onclick="ui.entryType='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
+        </div>
+        <input type="text" id="A-entry" placeholder="Log a bullet..." value="${ui.entryText}">
+        <button class="btn" onclick="aAdd()">Add</button>
+      </div>
+      <div class="card" style="padding:14px 18px">
+        ${bulletsForDay(ui.selectedDate).map(bulletRow).join('') || '<div class="empty">Nothing logged yet.</div>'}
+      </div>`;
+  } else if(ui.tab==='month'){
+    const mk = ui.activeMonth;
+    const nDays = daysInMonth(mk); const [y,m] = mk.split('-').map(Number);
+    const sel = data.monthlyHabitSelection[mk] || [];
+    const habits = data.habits.filter(h=>!h.archived && sel.includes(h.id));
+    const rows = Array.from({length:nDays},(_,i)=>{
+      const d = `${y}-${pad(m)}-${pad(i+1)}`;
+      const entries = monthAnchored(mk).filter(b=>b.dayAnchor===d);
+      const habitCells = habits.map(h=>{
+        const checked = !!data.habitChecks[`${h.id}_${d}`];
+        return `<label><input type="checkbox" ${checked?'checked':''} onchange="toggleHabitCheck('${h.id}','${d}')"></label>`;
+      }).join('');
+      return `<div class="drow"><div>${dayName(d)} ${i+1}</div>
+        <div>${entries.map(b=>`${glyph(b)} ${b.text}`).join(' · ') || ''}</div>
+        <div class="habits">${habitCells}</div></div>`;
+    }).join('');
+    content = `
+      <div class="pagehead">
+        <h1>${humanMonth(mk)}</h1>
+        <div class="row-gap">
+          <button class="btn small ghost" onclick="ui.activeMonth=prevMonthKey(ui.activeMonth);render()">← Prev</button>
+          <button class="btn small ghost" onclick="ui.activeMonth=nextMonthKey(ui.activeMonth);render()">Next →</button>
+        </div>
+      </div>
+      <div class="card" style="padding:14px 18px;margin-bottom:20px">
+        <div class="A-monthgrid">
+          <div class="hrow"><div><b>Day</b></div><div><b>Entries</b></div><div style="display:flex;gap:10px">${habits.map(h=>`<div style="font-size:10px;width:24px;text-align:center">${h.name.split(' ')[0]}</div>`).join('')}</div></div>
+          ${rows}
+        </div>
+        ${habitPickerHTML(mk)}
+      </div>
+      <h3 style="font-size:12px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Task list</h3>
+      <div class="card" style="padding:14px 18px">
+        ${monthUnanchored(mk).map(bulletRow).join('') || '<div class="empty">No month-list items.</div>'}
+      </div>`;
+  } else if(ui.tab==='review'){
+    content = `
+      <div class="pagehead"><h1>Review — ${humanMonth(prevMonthKey(TODAY_MONTH))}</h1></div>
+      <div class="card" style="padding:6px 18px">
+        ${migCandidates.map(b=>{
+          const from = b.scope==='day' ? b.date : b.month;
+          return `<div class="A-review-row">${glyph(b)}<span class="txt">${b.text}<span class="from">from ${from}</span></span>
+            <button class="btn small" onclick="migrateTask('${b.id}','${TODAY_MONTH}')">Migrate</button>
+            <button class="btn small ok" onclick="completeTaskById('${b.id}')">Complete</button>
+            <button class="btn small danger" onclick="cancelTask('${b.id}')">Cancel</button></div>`;
+        }).join('') || '<div class="empty" style="padding:14px 0">Inbox zero — nothing to review.</div>'}
+      </div>`;
+  }
+  return `
+    <div class="A-shell">
+      <div class="A-sidebar">
+        <div class="brand">BuJo</div>
+        <button class="${ui.tab==='today'?'active':''}" onclick="ui.tab='today';render()">☀ Today</button>
+        <button class="${ui.tab==='month'?'active':''}" onclick="ui.tab='month';render()">▤ Month</button>
+        <button class="${ui.tab==='review'?'active':''}" onclick="ui.tab='review';render()">✎ Review${migCandidates.length?`<span class="badge">${migCandidates.length}</span>`:''}</button>
+      </div>
+      <div class="A-main">${content}</div>
+    </div>`;
+}
+function aAdd(){
+  const text = document.getElementById('A-entry').value;
+  addBullet({type:ui.entryType, text, scope:'day', date:ui.selectedDate});
+  ui.entryText='';
+}
+
+/* ================= VARIANT B — Multi-pane dashboard, everything visible at once ================= */
+function VariantB(){
+  const mk = ui.activeMonth;
+  const migCandidates = openTasksForMonthBoundary(prevMonthKey(TODAY_MONTH)).filter(b=>b.status==='open');
+  const nDays = daysInMonth(mk); const [y,m] = mk.split('-').map(Number);
+  const miniDays = Array.from({length:nDays},(_,i)=>{
+    const d = `${y}-${pad(m)}-${pad(i+1)}`;
+    const n = bulletsForDay(d).length;
+    return `<div class="B-mini-day ${d===ui.selectedDate?'today':''}" onclick="ui.selectedDate='${d}';render()">
+      <span>${dayName(d)} ${i+1}</span><span class="dots">${Array.from({length:Math.min(n,4)},()=>'<span class="dot"></span>').join('')}</span></div>`;
+  }).join('');
+  const sel = data.monthlyHabitSelection[mk] || [];
+  const habits = data.habits.filter(h=>!h.archived && sel.includes(h.id));
+  const habitRows = habits.map(h=>{
+    const cells = Array.from({length:nDays},(_,i)=>{
+      const d = `${y}-${pad(m)}-${pad(i+1)}`;
+      const checked = !!data.habitChecks[`${h.id}_${d}`];
+      return `<td><input type="checkbox" ${checked?'checked':''} onchange="toggleHabitCheck('${h.id}','${d}')"></td>`;
+    }).join('');
+    return `<tr><td class="name">${h.name}</td>${cells}</tr>`;
+  }).join('');
+  return `
+    <div class="B-shell">
+      <div class="B-col">
+        <h3>${humanMonth(mk)}</h3>
+        <div class="row-gap" style="margin-bottom:8px">
+          <button class="btn small ghost" onclick="ui.activeMonth=prevMonthKey(ui.activeMonth);render()">←</button>
+          <button class="btn small ghost" onclick="ui.activeMonth=nextMonthKey(ui.activeMonth);render()">→</button>
+        </div>
+        ${miniDays}
+        ${migCandidates.length ? `<div class="B-need-review">
+          <b style="font-size:12px">Needs review (${migCandidates.length})</b>
+          ${migCandidates.map(b=>`<div class="r"><span style="font-size:12.5px">${glyph(b)} ${b.text}</span>
+            <span class="row-gap">
+              <button class="btn small" onclick="migrateTask('${b.id}','${TODAY_MONTH}')">Migrate</button>
+              <button class="btn small ok" onclick="completeTaskById('${b.id}')">✓</button>
+              <button class="btn small danger" onclick="cancelTask('${b.id}')">✕</button>
+            </span></div>`).join('')}
+        </div>` : ''}
+      </div>
+      <div class="B-col">
+        <h3>${humanDate(ui.selectedDate)}</h3>
+        <div class="row-gap" style="margin-bottom:12px">
+          <div class="type-pick">
+            ${['task','event','note'].map(t=>`<button class="${ui.entryType===t?'active':''}" onclick="ui.entryType='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
+          </div>
+        </div>
+        <div class="row-gap" style="margin-bottom:14px">
+          <input type="text" id="B-entry" placeholder="Log a bullet..." style="flex:1">
+          <button class="btn small" onclick="bAdd()">Add</button>
+        </div>
+        <div class="card" style="padding:12px 16px">
+          ${bulletsForDay(ui.selectedDate).map(bulletRow).join('') || '<div class="empty">Nothing logged yet.</div>'}
+        </div>
+      </div>
+      <div class="B-col">
+        <h3>Month task list</h3>
+        <div class="card" style="padding:10px 14px;margin-bottom:20px">
+          ${monthUnanchored(mk).map(bulletRow).join('') || '<div class="empty">No month-list items.</div>'}
+        </div>
+        <h3>Habits</h3>
+        <div style="overflow-x:auto">
+          <table class="B-habit-table"><tr><th></th>${Array.from({length:nDays},(_,i)=>`<th>${i+1}</th>`).join('')}</tr>${habitRows}</table>
+        </div>
+        ${habitPickerHTML(mk)}
+      </div>
+    </div>`;
+}
+function bAdd(){
+  const text = document.getElementById('B-entry').value;
+  addBullet({type:ui.entryType, text, scope:'day', date:ui.selectedDate});
+}
+
+/* ================= VARIANT C — Document / single continuous scroll ================= */
+function VariantC(){
+  const migCandidates = openTasksForMonthBoundary(prevMonthKey(TODAY_MONTH)).filter(b=>b.status==='open');
+  const mk = ui.activeMonth;
+  const nDays = daysInMonth(mk); const [y,m] = mk.split('-').map(Number);
+  const sel = data.monthlyHabitSelection[mk] || [];
+  const habits = data.habits.filter(h=>!h.archived && sel.includes(h.id));
+  const dayRows = Array.from({length:nDays},(_,i)=>{
+    const d = `${y}-${pad(m)}-${pad(i+1)}`;
+    const dow = new Date(d+'T00:00:00').getDay();
+    const entries = monthAnchored(mk).filter(b=>b.dayAnchor===d);
+    const habitCells = habits.map(h=>{
+      const checked = !!data.habitChecks[`${h.id}_${d}`];
+      return `<td class="habitcol"><input type="checkbox" ${checked?'checked':''} onchange="toggleHabitCheck('${h.id}','${d}')"></td>`;
+    }).join('');
+    return `<tr class="${dow===0?'week-end':''}"><td class="d">${dayName(d)} ${i+1}</td>
+      <td>${entries.map(b=>`${glyph(b)} ${b.text}`).join(' · ')}</td>${habitCells}</tr>`;
+  }).join('');
+  return `
+    <div class="C-toolbar">
+      <b>BuJo</b>
+      <div class="links">
+        <a onclick="document.getElementById('c-today').scrollIntoView({behavior:'smooth'})">Today</a>
+        <a onclick="document.getElementById('c-month').scrollIntoView({behavior:'smooth'})">Month</a>
+        <a onclick="document.getElementById('c-tasks').scrollIntoView({behavior:'smooth'})">Task list</a>
+      </div>
+    </div>
+    <div class="C-doc">
+      ${migCandidates.length ? `
+        <div class="C-alert ${ui.reviewOpen?'open':''}" ${ui.reviewOpen?'':`onclick="ui.reviewOpen=true;render()"`}>
+          <b>${migCandidates.length} unfinished item${migCandidates.length>1?'s':''} from ${humanMonth(prevMonthKey(TODAY_MONTH))}</b>
+          ${!ui.reviewOpen ? ' — click to review' : migCandidates.map(b=>`
+            <div class="row-gap" style="justify-content:space-between;padding:6px 0;border-top:1px solid #eddac0">
+              <span>${glyph(b)} ${b.text}</span>
+              <span class="row-gap">
+                <button class="btn small" onclick="migrateTask('${b.id}','${TODAY_MONTH}')">Migrate</button>
+                <button class="btn small ok" onclick="completeTaskById('${b.id}')">Complete</button>
+                <button class="btn small danger" onclick="cancelTask('${b.id}')">Cancel</button>
+              </span>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <div class="C-section" id="c-today">
+        <h2 style="margin-bottom:14px">${humanDate(ui.selectedDate)}</h2>
+        <div class="row-gap" style="margin-bottom:14px">
+          <div class="type-pick">
+            ${['task','event','note'].map(t=>`<button class="${ui.entryType===t?'active':''}" onclick="ui.entryType='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
+          </div>
+          <input type="text" id="C-entry" placeholder="Log a bullet..." style="flex:1;min-width:200px">
+          <button class="btn small" onclick="cAdd()">Add</button>
+        </div>
+        ${bulletsForDay(ui.selectedDate).map(bulletRow).join('') || '<div class="empty">Nothing logged yet.</div>'}
+      </div>
+
+      <div class="C-section" id="c-month">
+        <div class="row-gap" style="justify-content:space-between;margin-bottom:14px">
+          <h2>${humanMonth(mk)}</h2>
+          <div class="row-gap">
+            <button class="btn small ghost" onclick="ui.activeMonth=prevMonthKey(ui.activeMonth);render()">← Prev</button>
+            <button class="btn small ghost" onclick="ui.activeMonth=nextMonthKey(ui.activeMonth);render()">Next →</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="C-daylist">
+            <tr><th></th><th>Entries</th>${habits.map(h=>`<th class="habitcol">${h.name.split(' ')[0]}</th>`).join('')}</tr>
+            ${dayRows}
+          </table>
+        </div>
+        ${habitPickerHTML(mk)}
+      </div>
+
+      <div class="C-section" id="c-tasks">
+        <h2 style="margin-bottom:14px">Month task list</h2>
+        ${monthUnanchored(mk).map(bulletRow).join('') || '<div class="empty">No month-list items.</div>'}
+      </div>
+    </div>`;
+}
+function cAdd(){
+  const text = document.getElementById('C-entry').value;
+  addBullet({type:ui.entryType, text, scope:'day', date:ui.selectedDate});
+}
+
+/* ---------- switcher / router ---------- */
+const VARIANTS = {
+  A: {fn:VariantA, name:'Sidebar app shell'},
+  B: {fn:VariantB, name:'Multi-pane dashboard'},
+  C: {fn:VariantC, name:'Document / single-scroll'},
+};
+const ORDER = ['A','B','C'];
+function currentVariant(){
+  const v = new URLSearchParams(location.search).get('variant');
+  return VARIANTS[v] ? v : 'A';
+}
+function setVariant(v){
+  const url = new URL(location.href);
+  url.searchParams.set('variant', v);
+  history.replaceState(null,'',url);
+  ui.tab='today'; ui.reviewOpen=false;
+  render();
+}
+function cycle(dir){
+  const cur = currentVariant();
+  const i = ORDER.indexOf(cur);
+  setVariant(ORDER[(i+dir+ORDER.length)%ORDER.length]);
+}
+function renderSwitcher(){
+  const cur = currentVariant();
+  document.getElementById('switcher').innerHTML = `
+    <button onclick="cycle(-1)">←</button>
+    <span class="lbl"><b>Variant</b>${cur} — ${VARIANTS[cur].name}</span>
+    <button onclick="cycle(1)">→</button>`;
+}
+document.addEventListener('keydown', e=>{
+  const tag = (document.activeElement||{}).tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA') return;
+  if(e.key==='ArrowLeft') cycle(-1);
+  if(e.key==='ArrowRight') cycle(1);
+});
+function render(){
+  const v = currentVariant();
+  document.getElementById('app').innerHTML = VARIANTS[v].fn();
+  renderSwitcher();
+}
+render();
+</script>
+</body>
+</html>
