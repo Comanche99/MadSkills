@@ -43,28 +43,18 @@ body{margin:0;min-height:100vh;padding-bottom:70px;background:var(--bg);color:va
 [data-theme="ink"] .card{border-radius:2px}
 [data-theme="ink"] .btn{border-radius:2px}
 
-/* ---- theme: Washi — bold-badge/lanyard personality pass, ref: lennysproductpass.com ---- */
+/* ---- theme: Washi (cozy pastel scrapbook) ---- */
 [data-theme="washi"]{
-  --bg:#fdead9; --panel:#fffaf3; --ink:#3a2b1a; --ink-dim:#9c8a72; --line:#f0ddc0;
-  --ink-strong:#241b12;
-  --accent:#f4802a; --task-done:#f4802a; --task-cancel:#d8c4ac; --event:#3a7d8c; --note:#9c8a72;
-  --danger:#c23f2f; --ok:#3f8c52;
-  --heading-font: -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --script-font: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --bg:#faf1e6; --panel:#fffdf9; --ink:#4a3b32; --ink-dim:#a08b74; --line:#f0ddc0;
+  --accent:#c2694f; --task-done:#c2694f; --task-cancel:#d8c4ac; --event:#6a8f7a; --note:#a08b74;
+  --danger:#c2694f; --ok:#6a8f5a;
+  --heading-font: Georgia, "Segoe Print", "Bradley Hand", cursive, serif;
 }
 [data-theme="washi"] .washi-tape{position:relative;display:inline-block;padding:2px 14px;
      background:linear-gradient(100deg,#e9c9a6,#f0dcc0);color:#5a4632;transform:rotate(-1deg);
-     border-radius:2px;box-shadow:1px 1px 3px rgba(0,0,0,.12);font-size:12.5px;
-     font-family:var(--script-font);letter-spacing:.02em}
-[data-theme="washi"] .card{border-radius:18px;border:2px solid var(--ink-strong)}
+     border-radius:2px;box-shadow:1px 1px 3px rgba(0,0,0,.12);font-size:11px;letter-spacing:.03em}
+[data-theme="washi"] .card{border-radius:16px}
 [data-theme="washi"] input[type=checkbox]{border-radius:4px}
-[data-theme="washi"] h1,[data-theme="washi"] h2,[data-theme="washi"] h3{font-weight:800;color:var(--ink-strong);letter-spacing:-.01em}
-[data-theme="washi"] .btn{border:2px solid var(--ink-strong);border-radius:999px;color:var(--ink-strong);font-weight:700}
-[data-theme="washi"] .btn.small{border-width:1.5px}
-[data-theme="washi"] .btn.danger,[data-theme="washi"] .btn.ok{color:#fff}
-[data-theme="washi"] .btn.ghost{background:var(--panel)}
-[data-theme="washi"] .habit-picker button{border:1.5px solid var(--ink-strong);border-radius:999px}
-[data-theme="washi"] .habit-picker button.on{border-color:var(--ink-strong)}
 
 h1,h2,h3{margin:0;font-family:var(--heading-font)}
 .note-banner{font-size:12px;color:#7a1f1f;background:#fce7e0;border-bottom:1px solid #eab3a0;padding:8px 20px}
