@@ -111,9 +111,17 @@ input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
      white-space:nowrap;color:var(--accent);font-weight:700;max-height:70px;display:inline-block}
 
 .need-review{background:color-mix(in srgb, var(--danger) 8%, var(--panel));border:1px solid color-mix(in srgb, var(--danger) 30%, var(--line));
-     border-radius:var(--radius-sm);padding:12px;margin-top:16px}
-.need-review .r{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+     border-radius:var(--radius-sm);padding:10px 12px;margin-top:16px}
+.need-review .r{display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--line);font-size:11px}
 .need-review .r:last-child{border-bottom:none}
+.need-review .r .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.need-review .r .btn.small{padding:3px 7px;font-size:10px;flex:none}
+
+.habit-picker{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.habit-picker button{padding:2px 9px;font-size:10.5px;border-radius:12px;border:1px solid var(--line);
+     background:var(--panel);color:var(--ink-dim);cursor:pointer}
+.habit-picker button.on{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 16%, var(--panel));
+     color:var(--ink);font-weight:600}
 
 .habit-table{width:100%;border-collapse:collapse;font-size:11px}
 .habit-table th,.habit-table td{border:1px solid var(--line);padding:3px 2px;text-align:center}
@@ -146,10 +154,13 @@ let uid = 100;
 const data = {
   habits: [
     {id:'h1', name:'Exercise', archived:false},
-    {id:'h2', name:'Read 20 min', archived:false},
-    {id:'h3', name:'No phone after 10pm', archived:false},
+    {id:'h2', name:'Read', archived:false},
+    {id:'h3', name:'Meditate', archived:false},
+    {id:'h4', name:'Journal', archived:false},
+    {id:'h5', name:'Stretch', archived:false},
+    {id:'h6', name:'Water', archived:false},
   ],
-  monthlyHabitSelection: { '2026-07':['h1','h2'], '2026-08':['h1','h2','h3'] },
+  monthlyHabitSelection: { '2026-07':['h1','h2'], '2026-08':['h1','h2','h3','h4'] },
   habitChecks: {},
   bullets: [
     {id:'b1',type:'task',text:'Finish wayfinder prototype ticket',scope:'day',date:'2026-08-22',status:'open',history:[]},
@@ -171,6 +182,7 @@ const data = {
 ['2026-08-18','2026-08-19','2026-08-20','2026-08-21'].forEach(d=>data.habitChecks[`h1_${d}`]=true);
 ['2026-08-19','2026-08-21'].forEach(d=>data.habitChecks[`h2_${d}`]=true);
 ['2026-08-20'].forEach(d=>data.habitChecks[`h3_${d}`]=true);
+['2026-08-19','2026-08-20'].forEach(d=>data.habitChecks[`h4_${d}`]=true);
 
 /* ---------- shared helpers ---------- */
 function bulletsForDay(dateIso){
@@ -192,7 +204,7 @@ function glyph(b){
 function bulletRow(b){
   const txtClass = b.status==='complete' ? 'done' : b.status==='cancelled' ? 'cancel' : '';
   const tag = b.scope==='month' ? `<span class="tag">${b.dayAnchor ? 'this month' : 'month list'}</span>` : '';
-  const toggler = (b.type==='task' && b.status==='open') ? `onclick="completeTaskById('${b.id}')" style="cursor:pointer"` : '';
+  const toggler = (b.type==='task' && b.status!=='cancelled') ? `onclick="toggleTaskDone('${b.id}')" style="cursor:pointer"` : '';
   return `<div class="bullet-row" ${toggler}>${glyph(b)}<span class="btxt ${txtClass}">${b.text}${tag}</span></div>`;
 }
 function migrateTask(id, toMonth){
@@ -204,6 +216,11 @@ function migrateTask(id, toMonth){
 }
 function cancelTask(id){ const b=data.bullets.find(x=>x.id===id); b.status='cancelled'; render(); }
 function completeTaskById(id){ const b=data.bullets.find(x=>x.id===id); if(b.status==='open'){ b.status='complete'; render(); } }
+function toggleTaskDone(id){
+  const b = data.bullets.find(x=>x.id===id);
+  b.status = b.status==='open' ? 'complete' : 'open';
+  render();
+}
 function toggleHabit(mk, habitId){
   const sel = data.monthlyHabitSelection[mk] || (data.monthlyHabitSelection[mk]=[]);
   const i = sel.indexOf(habitId);
@@ -231,13 +248,13 @@ function habitPickerHTML(mk){
   const sel = data.monthlyHabitSelection[mk] || [];
   const chips = data.habits.filter(h=>!h.archived).map(h=>{
     const on = sel.includes(h.id);
-    return `<button class="btn small ${on?'':'ghost'}" onclick="toggleHabit('${mk}','${h.id}')">${on?'✓ ':''}${h.name}</button>`;
-  }).join(' ');
-  return `<div class="row-gap" style="margin-top:8px">${chips}</div>`;
+    return `<button class="${on?'on':''}" onclick="toggleHabit('${mk}','${h.id}')">${on?'✓ ':''}${h.name}</button>`;
+  }).join('');
+  return `<div class="habit-picker">${chips}</div>`;
 }
 
 /* ---------- ui state ---------- */
-const ui = { selectedDate: TODAY_ISO, activeMonth: TODAY_MONTH, entryType:'task' };
+const ui = { selectedDate: TODAY_ISO, activeMonth: TODAY_MONTH, entryType:'task', monthEntryType:'task' };
 
 /* ================= the winning layout: multi-pane dashboard, habit tracker in the day-nav panel ================= */
 function renderDayNav(mk){
@@ -278,13 +295,13 @@ function renderApp(){
         </div>
         ${renderDayNav(mk)}
         ${migCandidates.length ? `<div class="need-review">
-          <b style="font-size:12px">Needs review (${migCandidates.length})</b>
-          ${migCandidates.map(b=>`<div class="r"><span style="font-size:12.5px">${glyph(b)} ${b.text}</span>
-            <span class="row-gap">
+          <b style="font-size:11px">Needs review (${migCandidates.length})</b>
+          ${migCandidates.map(b=>`<div class="r">
+              <span class="txt">${glyph(b)} ${b.text}</span>
               <button class="btn small" onclick="migrateTask('${b.id}','${TODAY_MONTH}')">Migrate</button>
               <button class="btn small ok" onclick="completeTaskById('${b.id}')">✓</button>
               <button class="btn small danger" onclick="cancelTask('${b.id}')">✕</button>
-            </span></div>`).join('')}
+            </div>`).join('')}
         </div>` : ''}
       </div>
       <div class="col center">
@@ -304,6 +321,15 @@ function renderApp(){
       </div>
       <div class="col">
         <h3>${theme==='washi' ? '<span class="washi-tape">task list</span>' : 'Month task list'}</h3>
+        <div class="row-gap" style="margin-bottom:10px">
+          <div class="type-pick">
+            ${['task','event','note'].map(t=>`<button class="${ui.monthEntryType===t?'active':''}" onclick="ui.monthEntryType='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
+          </div>
+        </div>
+        <div class="row-gap" style="margin-bottom:12px">
+          <input type="text" id="month-entry" placeholder="Add to this month..." style="flex:1">
+          <button class="btn small" onclick="monthAdd()">Add</button>
+        </div>
         <div class="card" style="padding:10px 14px">
           ${monthUnanchored(mk).map(bulletRow).join('') || '<div class="empty">No month-list items.</div>'}
         </div>
@@ -313,6 +339,10 @@ function renderApp(){
 function doAdd(){
   const text = document.getElementById('entry').value;
   addBullet({type:ui.entryType, text, scope:'day', date:ui.selectedDate});
+}
+function monthAdd(){
+  const text = document.getElementById('month-entry').value;
+  addBullet({type:ui.monthEntryType, text, scope:'month', month:ui.activeMonth, dayAnchor:null});
 }
 
 /* ---------- switcher / router (now cycles visual "vibe" themes, not IA) ---------- */
