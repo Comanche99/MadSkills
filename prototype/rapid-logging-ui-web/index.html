@@ -43,18 +43,28 @@ body{margin:0;min-height:100vh;padding-bottom:70px;background:var(--bg);color:va
 [data-theme="ink"] .card{border-radius:2px}
 [data-theme="ink"] .btn{border-radius:2px}
 
-/* ---- theme: Washi (cozy pastel scrapbook) ---- */
+/* ---- theme: Washi — bold-badge/lanyard personality pass, ref: lennysproductpass.com ---- */
 [data-theme="washi"]{
-  --bg:#faf1e6; --panel:#fffdf9; --ink:#4a3b32; --ink-dim:#a08b74; --line:#f0ddc0;
-  --accent:#c2694f; --task-done:#c2694f; --task-cancel:#d8c4ac; --event:#6a8f7a; --note:#a08b74;
-  --danger:#c2694f; --ok:#6a8f5a;
-  --heading-font: Georgia, "Segoe Print", "Bradley Hand", cursive, serif;
+  --bg:#fdead9; --panel:#fffaf3; --ink:#3a2b1a; --ink-dim:#9c8a72; --line:#f0ddc0;
+  --ink-strong:#241b12;
+  --accent:#f4802a; --task-done:#f4802a; --task-cancel:#d8c4ac; --event:#3a7d8c; --note:#9c8a72;
+  --danger:#c23f2f; --ok:#3f8c52;
+  --heading-font: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --script-font: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
 }
 [data-theme="washi"] .washi-tape{position:relative;display:inline-block;padding:2px 14px;
      background:linear-gradient(100deg,#e9c9a6,#f0dcc0);color:#5a4632;transform:rotate(-1deg);
-     border-radius:2px;box-shadow:1px 1px 3px rgba(0,0,0,.12);font-size:11px;letter-spacing:.03em}
-[data-theme="washi"] .card{border-radius:16px}
+     border-radius:2px;box-shadow:1px 1px 3px rgba(0,0,0,.12);font-size:12.5px;
+     font-family:var(--script-font);letter-spacing:.02em}
+[data-theme="washi"] .card{border-radius:18px;border:2px solid var(--ink-strong)}
 [data-theme="washi"] input[type=checkbox]{border-radius:4px}
+[data-theme="washi"] h1,[data-theme="washi"] h2,[data-theme="washi"] h3{font-weight:800;color:var(--ink-strong);letter-spacing:-.01em}
+[data-theme="washi"] .btn{border:2px solid var(--ink-strong);border-radius:999px;color:var(--ink-strong);font-weight:700}
+[data-theme="washi"] .btn.small{border-width:1.5px}
+[data-theme="washi"] .btn.danger,[data-theme="washi"] .btn.ok{color:#fff}
+[data-theme="washi"] .btn.ghost{background:var(--panel)}
+[data-theme="washi"] .habit-picker button{border:1.5px solid var(--ink-strong);border-radius:999px}
+[data-theme="washi"] .habit-picker button.on{border-color:var(--ink-strong)}
 
 h1,h2,h3{margin:0;font-family:var(--heading-font)}
 .note-banner{font-size:12px;color:#7a1f1f;background:#fce7e0;border-bottom:1px solid #eab3a0;padding:8px 20px}
@@ -66,19 +76,28 @@ h1,h2,h3{margin:0;font-family:var(--heading-font)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
 .bullet-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .bullet-row:last-child{border-bottom:none}
-.glyph{width:16px;flex:none;text-align:center;font-size:14px;color:var(--ink)}
+.glyph{width:16px;flex:none;text-align:center;font-size:14px;color:var(--ink);cursor:pointer;border-radius:4px}
+.glyph:hover{background:color-mix(in srgb, var(--accent) 20%, transparent)}
 .glyph.event{color:var(--event)} .glyph.note{color:var(--note)}
 .glyph.done{color:var(--task-done)} .glyph.cancel{color:var(--task-cancel)}
 .btxt{flex:1;font-size:14px} .btxt.done{color:var(--ink-dim);text-decoration:line-through}
 .btxt.cancel{color:var(--task-cancel);text-decoration:line-through}
-.tag{font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:1px 6px;margin-left:6px}
+.tag{font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:1px 6px;margin-left:6px;white-space:nowrap;display:inline-block}
 .empty{font-size:13px;color:var(--ink-dim);font-style:italic}
 input[type=text],input[type=date]{padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--line);
      font-size:13px;background:var(--panel);color:var(--ink)}
 input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
-.type-pick button{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--panel);
-     font-size:12px;cursor:pointer;margin-right:4px;color:var(--ink)}
-.type-pick button.active{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 15%, var(--panel));font-weight:700}
+
+/* inline "always an empty row" composer, subtle type picker that appears on focus */
+.bullet-row.compose{align-items:center;cursor:text}
+.bullet-row.compose .type-toggle{display:flex;gap:2px;flex:none;opacity:.3;transition:opacity .15s}
+.bullet-row.compose:focus-within .type-toggle{opacity:1}
+.bullet-row.compose .type-toggle button{width:17px;height:17px;border:none;background:none;cursor:pointer;
+     font-size:13px;color:var(--ink-dim);border-radius:4px;padding:0;line-height:1}
+.bullet-row.compose .type-toggle button.active{color:var(--accent);background:color-mix(in srgb, var(--accent) 18%, transparent)}
+.bullet-row.compose input{flex:1;border:none;background:none;outline:none;font-size:14px;color:var(--ink);
+     padding:2px 0;font-family:inherit}
+.bullet-row.compose input::placeholder{color:var(--ink-dim);opacity:.6}
 
 /* switcher */
 #switcher{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;
@@ -194,18 +213,29 @@ function openTasksForMonthBoundary(mk){
   return data.bullets.filter(b => b.type==='task' && b.status==='open' &&
     ((b.scope==='day' && b.date.startsWith(mk)) || (b.scope==='month' && b.month===mk)));
 }
-function glyph(b){
-  if(b.type==='event') return '<span class="glyph event">○</span>';
-  if(b.type==='note') return '<span class="glyph note">–</span>';
-  if(b.status==='complete') return '<span class="glyph done">✕</span>';
-  if(b.status==='cancelled') return '<span class="glyph cancel">⦸</span>';
-  return '<span class="glyph">•</span>';
+function glyphParts(b){
+  if(b.type==='event') return ['○','event'];
+  if(b.type==='note') return ['–','note'];
+  if(b.status==='complete') return ['✕','done'];
+  if(b.status==='cancelled') return ['⦸','cancel'];
+  return ['•',''];
 }
+function glyph(b){ const [s,c]=glyphParts(b); return `<span class="glyph ${c}">${s}</span>`; }
 function bulletRow(b){
+  const [sym,cls] = glyphParts(b);
   const txtClass = b.status==='complete' ? 'done' : b.status==='cancelled' ? 'cancel' : '';
   const tag = b.scope==='month' ? `<span class="tag">${b.dayAnchor ? 'this month' : 'month list'}</span>` : '';
   const toggler = (b.type==='task' && b.status!=='cancelled') ? `onclick="toggleTaskDone('${b.id}')" style="cursor:pointer"` : '';
-  return `<div class="bullet-row" ${toggler}>${glyph(b)}<span class="btxt ${txtClass}">${b.text}${tag}</span></div>`;
+  const glyphEl = `<span class="glyph ${cls}" onclick="event.stopPropagation();cycleBulletType('${b.id}')" title="Click to change bullet type">${sym}</span>`;
+  return `<div class="bullet-row" ${toggler}>${glyphEl}<span class="btxt ${txtClass}">${b.text}${tag}</span></div>`;
+}
+function cycleBulletType(id){
+  const b = data.bullets.find(x=>x.id===id);
+  const order = ['task','event','note'];
+  b.type = order[(order.indexOf(b.type)+1)%order.length];
+  if(b.type==='task'){ if(!b.status) b.status='open'; if(!b.history) b.history=[]; }
+  else { delete b.status; delete b.history; }
+  render();
 }
 function migrateTask(id, toMonth){
   const b = data.bullets.find(x=>x.id===id);
@@ -254,7 +284,7 @@ function habitPickerHTML(mk){
 }
 
 /* ---------- ui state ---------- */
-const ui = { selectedDate: TODAY_ISO, activeMonth: TODAY_MONTH, entryType:'task', monthEntryType:'task' };
+const ui = { selectedDate: TODAY_ISO, activeMonth: TODAY_MONTH, composeDayType:'task', composeMonthType:'task' };
 
 /* ================= the winning layout: multi-pane dashboard, habit tracker in the day-nav panel ================= */
 function renderDayNav(mk){
@@ -306,43 +336,52 @@ function renderApp(){
       </div>
       <div class="col center">
         <h3>${theme==='washi' ? '<span class="washi-tape">today</span> ' : ''}${humanDate(ui.selectedDate)}</h3>
-        <div class="row-gap" style="margin:10px 0 14px">
-          <div class="type-pick">
-            ${['task','event','note'].map(t=>`<button class="${ui.entryType===t?'active':''}" onclick="ui.entryType='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
-          </div>
-        </div>
-        <div class="row-gap" style="margin-bottom:14px">
-          <input type="text" id="entry" placeholder="Log a bullet..." style="flex:1">
-          <button class="btn small" onclick="doAdd()">Add</button>
-        </div>
-        <div class="card" style="padding:12px 16px">
-          ${bulletsForDay(ui.selectedDate).map(bulletRow).join('') || '<div class="empty">Nothing logged yet.</div>'}
+        <div class="card" style="padding:12px 16px;margin-top:12px">
+          ${bulletsForDay(ui.selectedDate).map(bulletRow).join('')}
+          ${composeRow('day')}
         </div>
       </div>
       <div class="col">
         <h3>${theme==='washi' ? '<span class="washi-tape">task list</span>' : 'Month task list'}</h3>
-        <div class="row-gap" style="margin-bottom:10px">
-          <div class="type-pick">
-            ${['task','event','note'].map(t=>`<button class="${ui.monthEntryType===t?'active':''}" onclick="ui.monthEntryType='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}
-          </div>
-        </div>
-        <div class="row-gap" style="margin-bottom:12px">
-          <input type="text" id="month-entry" placeholder="Add to this month..." style="flex:1">
-          <button class="btn small" onclick="monthAdd()">Add</button>
-        </div>
-        <div class="card" style="padding:10px 14px">
-          ${monthUnanchored(mk).map(bulletRow).join('') || '<div class="empty">No month-list items.</div>'}
+        <div class="card" style="padding:10px 14px;margin-top:12px">
+          ${monthUnanchored(mk).map(bulletRow).join('')}
+          ${composeRow('month')}
         </div>
       </div>
     </div>`;
 }
-function doAdd(){
-  const text = document.getElementById('entry').value;
-  addBullet({type:ui.entryType, text, scope:'day', date:ui.selectedDate});
+function composeRow(which){
+  const type = which==='day' ? ui.composeDayType : ui.composeMonthType;
+  const icons = [['task','•'],['event','○'],['note','–']].map(([t,sym])=>
+    `<button onmousedown="event.preventDefault()" onclick="pickComposeType('${which}','${t}')"
+       class="${type===t?'active':''}" title="${t[0].toUpperCase()+t.slice(1)}">${sym}</button>`
+  ).join('');
+  const placeholder = which==='day' ? 'Type to add a bullet…' : 'Type to add to this month…';
+  return `<div class="bullet-row compose">
+    <span class="type-toggle">${icons}</span>
+    <input type="text" id="compose-${which}" placeholder="${placeholder}" onkeydown="composeKeydown(event,'${which}')">
+  </div>`;
 }
-function monthAdd(){
-  const text = document.getElementById('month-entry').value;
-  addBullet({type:ui.monthEntryType, text, scope:'month', month:ui.activeMonth, dayAnchor:null});
+function pickComposeType(which, type){
+  if(which==='day') ui.composeDayType = type; else ui.composeMonthType = type;
+  render();
+  focusCompose(which);
+}
+function focusCompose(which){
+  const el = document.getElementById(`compose-${which}`);
+  if(el) el.focus();
+}
+function composeKeydown(e, which){
+  if(e.key !== 'Enter') return;
+  e.preventDefault();
+  const text = e.target.value;
+  if(!text.trim()) return;
+  if(which==='day'){
+    addBullet({type: ui.composeDayType, text, scope:'day', date: ui.selectedDate});
+  } else {
+    addBullet({type: ui.composeMonthType, text, scope:'month', month: ui.activeMonth, dayAnchor:null});
+  }
+  focusCompose(which);
 }
 
 /* ---------- switcher / router (now cycles visual "vibe" themes, not IA) ---------- */
