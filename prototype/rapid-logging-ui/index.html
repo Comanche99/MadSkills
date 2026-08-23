@@ -87,9 +87,11 @@
   .daylist-table{border-collapse:collapse;width:100%;font-size:12px}
   .daylist-table th,.daylist-table td{border-bottom:1px solid var(--line);padding:4px 3px;vertical-align:middle}
   .daylist-table th{background:#faf8f2;font-size:10px;color:var(--ink-dim);font-weight:600}
-  .daylist-table td.daylabel,.daylist-table th.daylabel{width:30px;text-align:center}
-  .daylist-table td.daylabel .ltr{display:block;font-size:10px;color:var(--ink-dim)}
+  .daylist-table td.daylabel,.daylist-table th.daylabel{width:36px;text-align:left;white-space:nowrap}
+  .daylist-table td.daylabel .ltr{font-size:10px;color:var(--ink-dim);margin-right:4px}
   .daylist-table td.daylabel .num{font-size:13px;font-weight:700}
+  .daylist-table tr.week-end td,.daylist-table tr.week-end th{border-bottom:2px solid var(--accent)}
+  .daylist-table tr.today-row td{background:#f3e6da}
   .daylist-table td.entries{font-size:11.5px}
   .daylist-table td.entries .mk{display:block;color:var(--accent);white-space:nowrap;
        overflow:hidden;text-overflow:ellipsis;max-width:120px}
@@ -474,14 +476,15 @@ function renderMonthDayHabitList(mk){
   const rows = Array.from({length:nDays},(_,i)=>{
     const d = `${y}-${pad(m)}-${pad(i+1)}`;
     const letter = dayName(d).charAt(0).toUpperCase();
+    const dow = new Date(d+'T00:00:00').getDay(); // 0 = Sunday, end of the calendar week
     const entries = monthAnchored(mk).filter(b=>b.dayAnchor===d);
     const entriesHTML = entries.map(b=>`<span class="mk">${glyph(b)}${b.text}</span>`).join('');
     const habitCells = habits.map(h=>{
       const checked = !!data.habitChecks[`${h.id}_${d}`];
       return `<td class="habitcol"><input type="checkbox" ${checked?'checked':''} onchange="toggleHabitCheck('${h.id}','${d}')"></td>`;
     }).join('');
-    const today = d===TODAY_ISO ? ' style="background:#f3e6da"' : '';
-    return `<tr${today}><td class="daylabel"><span class="ltr">${letter}</span><span class="num">${i+1}</span></td><td class="entries">${entriesHTML}</td>${habitCells}</tr>`;
+    const cls = [d===TODAY_ISO?'today-row':'', dow===0?'week-end':''].filter(Boolean).join(' ');
+    return `<tr${cls?` class="${cls}"`:''}><td class="daylabel"><span class="ltr">${letter}</span><span class="num">${i+1}</span></td><td class="entries">${entriesHTML}</td>${habitCells}</tr>`;
   }).join('');
   return `<div style="overflow-x:auto"><table class="daylist-table">${head}${rows}</table></div>
     ${habitPickerHTML(mk)}`;
