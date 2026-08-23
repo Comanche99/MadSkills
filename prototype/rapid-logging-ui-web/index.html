@@ -100,7 +100,9 @@ input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
 .daynav th{font-size:9px;color:var(--ink-dim);font-weight:600;vertical-align:bottom}
 .daynav tr.week-end td,.daynav tr.week-end th{border-bottom:2px solid var(--accent)}
 .daynav tr.today td{background:color-mix(in srgb, var(--accent) 12%, transparent)}
-.daynav td.daylabel{width:26px;font-weight:700;cursor:pointer}
+.daynav td.daylabel{width:56px;font-weight:700;cursor:pointer;white-space:nowrap}
+.daynav td.daylabel .dow{display:inline-block;width:28px;color:var(--ink-dim);font-weight:600;font-size:11px}
+.daynav td.daylabel .dnum{display:inline-block;width:16px;text-align:left;font-variant-numeric:tabular-nums}
 .daynav td.dots{cursor:pointer}
 .daynav td.dots .dotrow{display:flex;gap:2px}
 .daynav td.dots .dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
@@ -245,7 +247,7 @@ function renderDayNav(mk){
   const head = `<tr><th></th><th></th>${habits.map(h=>`<th class="habitcol"><span class="vert">${h.name}</span></th>`).join('')}</tr>`;
   const rows = Array.from({length:nDays},(_,i)=>{
     const d = `${y}-${pad(m)}-${pad(i+1)}`;
-    const letter = dayName(d).charAt(0).toUpperCase();
+    const weekdayAbbr = dayName(d);
     const dow = new Date(d+'T00:00:00').getDay();
     const n = bulletsForDay(d).length;
     const habitCells = habits.map(h=>{
@@ -254,7 +256,7 @@ function renderDayNav(mk){
     }).join('');
     const cls = [d===TODAY_ISO?'today':'', dow===0?'week-end':''].filter(Boolean).join(' ');
     return `<tr${cls?` class="${cls}"`:''}>
-      <td class="daylabel" onclick="ui.selectedDate='${d}';render()">${letter} ${i+1}</td>
+      <td class="daylabel" onclick="ui.selectedDate='${d}';render()"><span class="dow">${weekdayAbbr}</span><span class="dnum">${i+1}</span></td>
       <td class="dots" onclick="ui.selectedDate='${d}';render()"><span class="dotrow">${Array.from({length:Math.min(n,4)},()=>'<span class="dot"></span>').join('')}</span></td>
       ${habitCells}
     </tr>`;
